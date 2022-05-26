@@ -19,6 +19,7 @@ const pathToCopiedAssets = path.join(pathToDist, 'assets');
 
 const pathToDistIndex = path.join(__dirname, 'project-dist', 'index.html');
 const pathToTemplate = path.join(__dirname, 'template.html');
+const pathToComponents = path.join(__dirname, 'components');
 
 function addStyle() {
     fsp.rm(pathToDistStyle, { force: true }).then(() => {
@@ -72,24 +73,22 @@ function copyContent() {
 }
 
 function createIndexHTML() {
-    const pathToComponents = path.join(__dirname, 'components');
-    const pathToArticles = path.join(pathToComponents, 'articles.html') 
-    const pathToFooter = path.join(pathToComponents, 'footer.html');
-    
-    const pathToHeader = path.join(pathToComponents, 'header.html');
+    fs.readdir(pathToComponents, { withFileTypes: true }, (_, files) => {
+        const filesPath = files.map(file => path.join(pathToComponents, file.name));
+        const filesContent = filesPath.map(filePath => fsp.readFile(filePath));
 
-    Promise.all([
-        fsp.readFile(pathToTemplate),
-        fsp.readFile(pathToArticles),
-        fsp.readFile(pathToFooter),
-        fsp.readFile(pathToHeader),
-    ]).then(([template, articles, footer, header]) => {
-        const content = template.toString()
-            .replace('{{header}}', header.toString())
-            .replace('{{articles}}', articles.toString())
-            .replace('{{footer}}', footer.toString());
-
-        fsp.appendFile(pathToDistIndex, content);
+        Promise.all([
+            fsp.readFile(pathToTemplate),
+            ...filesContent, 
+        ]).then(([template, ...contents]) => {
+            let result = template.toString();
+            contents.forEach((content, index) => {
+                const contentString = content.toString();
+                const fileName = files[index].name.split('.')[0];
+                result = result.replace(`{{${fileName}}}`, contentString);
+            });
+            fsp.appendFile(pathToDistIndex, result);
+        })
     })
 }
 

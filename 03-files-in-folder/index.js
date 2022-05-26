@@ -3,7 +3,7 @@ const path = require('path');
 const pathToFilesDir = path.join(__dirname, 'secret-folder');
 
 fs.readdir(pathToFilesDir, { withFileTypes: true }, (_, files) => {
-    files.map((file) => {
+    files.forEach((file) => {
         if (file.isFile()) {
             const pathToFile = path.join(__dirname, 'secret-folder', `${file.name}`);
             
